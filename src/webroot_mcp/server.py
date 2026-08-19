@@ -91,6 +91,25 @@ def create_mcp_server(settings: Settings) -> FastMCP:
     # correctly behind a reverse proxy or docker network.
     mcp = FastMCP(
         name="webroot-mcp",
+        instructions=(
+            "Webroot (OpenText) is a cloud-based endpoint protection and DNS "
+            "security platform for MSPs, managed through the Global Site Manager "
+            "(GSM) console. It organizes customers as sites, each with protected "
+            "endpoints (devices), endpoint groups, and assigned security "
+            "policies. Use this server for: site/customer inventory "
+            "(webroot_get_sites), endpoint and group inventory within a site "
+            "(webroot_get_endpoints, webroot_get_groups), policy lookups "
+            "(webroot_get_policies), threat detection history "
+            "(webroot_get_threat_history), and real-time agent/license status "
+            "(webroot_get_agent_status). DNS Protection (DNSP) is a separate "
+            "add-on product with its own tools (webroot_get_dnsp_categories, "
+            "webroot_get_dnsp_block_reasons, webroot_get_dnsp_traffic_summary, "
+            "webroot_get_dnsp_blocked_traffic) — these fail with a "
+            "dnsp_not_enabled error if DNSP isn't enabled for the console. All "
+            "tools are read-only queries. Typical flow: webroot_get_sites to "
+            "find a site ID, then webroot_get_endpoints/webroot_get_groups with "
+            "that ID."
+        ),
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
     )
 

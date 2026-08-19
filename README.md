@@ -53,8 +53,9 @@ Missing any header returns `401`:
 }
 ```
 
-An invalid credential surfaces as a tool-level error during the internal
-login step, not an HTTP-level error from this server.
+An invalid credential surfaces as a structured tool-level error (see
+"Error Handling" below) during the internal login step, not an HTTP-level
+error from this server.
 
 ## Environment Variables
 
@@ -67,24 +68,55 @@ login step, not an HTTP-level error from this server.
 ## MCP Endpoint
 
 - `POST /mcp` — MCP protocol (streamable HTTP transport)
-- `GET /health` — health check, returns `{"status": "ok", "service": "webroot-mcp", "transport": "http"}`
+- `GET /health` — health check, returns `{"status": "ok"}` (pure local probe, does not depend on the Webroot API)
 
 ## Tool List
+
+All 10 tools are read-only (`readOnlyHint=True`); there are no write/delete tools in this service.
 
 | Tool | 功能 | 参数 |
 |---|---|---|
 | `webroot_get_sites` | 列出该 GSM 控制台下所有站点（客户账号） | 无 |
-| `webroot_get_endpoints` | 列出指定站点下的受保护终端设备 | `site_id`（必填），`page_size`（可选，默认 1000） |
+| `webroot_get_endpoints` | 列出指定站点下的受保护终端设备 | `site_id`（必填），`page_size`（可选，默认 50，硬上限 200） |
 | `webroot_get_groups` | 列出指定站点下的终端分组 | `site_id`（必填） |
 | `webroot_get_policies` | 列出该 GSM 控制台下的安全策略 | 无 |
-| `webroot_get_threat_history` | 获取指定站点在某日期范围内的威胁检测历史（范围不能超过 3 个月） | `site_id`、`start_date`、`end_date`（均必填），`page_size`、`page_nr`（可选） |
-| `webroot_get_dnsp_blocked_traffic` | 获取指定站点的 DNS Protection 拦截流量记录（需该控制台已启用 DNSP） | `site_id`、`start_date`、`end_date`（均必填），`page_size`、`page_nr`（可选） |
+| `webroot_get_threat_history` | 获取指定站点在某日期范围内的威胁检测历史（范围不能超过 3 个月） | `site_id`、`start_date`、`end_date`（均必填），`page_size`（可选，硬上限 200）、`page_nr`（可选） |
+| `webroot_get_dnsp_blocked_traffic` | 获取指定站点的 DNS Protection 拦截流量记录（需该控制台已启用 DNSP） | `site_id`、`start_date`、`end_date`（均必填），`page_size`（可选，硬上限 200）、`page_nr`（可选） |
 | `webroot_get_dnsp_categories` | 列出 DNS Protection 内容过滤分类（需该控制台已启用 DNSP） | 无 |
 | `webroot_get_dnsp_block_reasons` | 列出 DNS Protection 拦截原因代码（需该控制台已启用 DNSP） | 无 |
 | `webroot_get_dnsp_traffic_summary` | 获取 DNS Protection 流量汇总统计（需该控制台已启用 DNSP） | `start_date`、`end_date`（均必填） |
-| `webroot_get_agent_status` | 获取终端 Agent 的实时状态/授权信息 | `batch_size`（可选，默认 500） |
+| `webroot_get_agent_status` | 获取终端 Agent 的实时状态/授权信息 | `batch_size`（可选，默认 50，硬上限 200） |
 
-Responses are the vendor's raw JSON, pretty-printed, returned as-is.
+`page_size`/`batch_size` caps: the vendor's public API reference does not
+document a maximum for these parameters on any endpoint above, so this
+server applies its own default (50) and hard cap (200) rather than pass
+through an unbounded value.
+
+Responses are the vendor's JSON, serialized compactly (no pretty-printing,
+`ensure_ascii=False`) and capped at 20,000 characters — an oversized list
+field is truncated with `truncated`/`original_count` markers rather than
+ever returning an unbounded blob.
+
+## Error Handling
+
+Errors are returned as an in-band JSON envelope (a normal tool result
+string, not an MCP protocol error):
+
+```json
+{"error": {"code": "not_found", "message": "...", "retryable": false}}
+```
+
+`code` is one of a fixed vocabulary: `not_configured`, `unauthorized`,
+`not_found`, `invalid_argument`, `rate_limited`, `upstream_error`.
+`retryable` tells the caller whether retrying the same call could
+succeed (true for `rate_limited`/`upstream_error`, false otherwise). An
+empty result set (e.g. a site with no endpoints) is a normal successful
+result, not a `not_found` error.
+
+Outbound calls to the Webroot API use a 5s connect / 30s read timeout,
+and retry `429`/`5xx` responses up to 3 times with backoff (respecting
+`Retry-After`, capped at 20s), reusing a single pooled HTTP client for the
+process lifetime.
 
 ## 测试示例
 
