@@ -105,15 +105,15 @@ fresh on every single tool call rather than caching it across MCP
 requests — nothing is cached or persisted. Every real API call then sends
 `Authorization: Bearer <access_token>`.
 
-### HEADER 授权参数说明
+### HEADER authentication parameters
 
-| Header | 类型 | 是否必填 | 默认值 | 枚举值 | 字段描述 | Example |
+| Header | Type | Required | Default | Allowed values | Description | Example |
 |---|---|---|---|---|---|---|
-| `X-Webroot-Username` | string | 是 | 无 | 无 | GSM 控制台账号邮箱 | `admin@example.com` |
-| `X-Webroot-Password` | string | 是 | 无 | 无 | 对应密码 | `••••••••` |
-| `X-Webroot-Client-Id` | string | 是 | 无 | 无 | Unity API Client ID（需联系 Webroot 申请） | `client_abc123@example.com` |
-| `X-Webroot-Client-Secret` | string | 是 | 无 | 无 | Unity API Client Secret | `a1B2c3D4%e5F6` |
-| `X-Webroot-Parent-Keycode` | string | 是 | 无 | 无 | GSM 控制台的 Parent Key Code | `AB12-GSMT-3456-CD78-9EF0` |
+| `X-Webroot-Username` | string | Yes | None | None | GSM console account email | `admin@example.com` |
+| `X-Webroot-Password` | string | Yes | None | None | Corresponding password | `••••••••` |
+| `X-Webroot-Client-Id` | string | Yes | None | None | Unity API Client ID (apply through Webroot) | `client_abc123@example.com` |
+| `X-Webroot-Client-Secret` | string | Yes | None | None | Unity API Client Secret | `a1B2c3D4%e5F6` |
+| `X-Webroot-Parent-Keycode` | string | Yes | None | None | Parent Key Code of the GSM console | `AB12-GSMT-3456-CD78-9EF0` |
 
 Missing any header returns `401`:
 ```json
@@ -131,11 +131,11 @@ error from this server.
 
 ## Environment Variables
 
-| Variable | 类型 | 是否必填 | 默认值 | 说明 |
+| Variable | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `MCP_HTTP_PORT` | int | 否 | `8080` | HTTP 监听端口 |
-| `MCP_HTTP_HOST` | string | 否 | `0.0.0.0` | HTTP 监听地址 |
-| `WEBROOT_BASE_URL` | string | 否 | `https://unityapi.webrootcloudav.com` | Webroot Unity API 基础 URL |
+| `MCP_HTTP_PORT` | int | No | `8080` | HTTP listen port |
+| `MCP_HTTP_HOST` | string | No | `0.0.0.0` | HTTP listen address |
+| `WEBROOT_BASE_URL` | string | No | `https://unityapi.webrootcloudav.com` | Webroot Unity API base URL |
 
 ## MCP Endpoint
 
@@ -146,18 +146,18 @@ error from this server.
 
 All 10 tools are read-only (`readOnlyHint=True`); there are no write/delete tools in this service.
 
-| Tool | 功能 | 参数 |
+| Tool | Function | Parameters |
 |---|---|---|
-| `webroot_get_sites` | 列出该 GSM 控制台下所有站点（客户账号） | 无 |
-| `webroot_get_endpoints` | 列出指定站点下的受保护终端设备 | `site_id`（必填），`page_size`（可选，默认 50，硬上限 200） |
-| `webroot_get_groups` | 列出指定站点下的终端分组 | `site_id`（必填） |
-| `webroot_get_policies` | 列出该 GSM 控制台下的安全策略 | 无 |
-| `webroot_get_threat_history` | 获取指定站点在某日期范围内的威胁检测历史（范围不能超过 3 个月） | `site_id`、`start_date`、`end_date`（均必填），`page_size`（可选，硬上限 200）、`page_nr`（可选） |
-| `webroot_get_dnsp_blocked_traffic` | 获取指定站点的 DNS Protection 拦截流量记录（需该控制台已启用 DNSP） | `site_id`、`start_date`、`end_date`（均必填），`page_size`（可选，硬上限 200）、`page_nr`（可选） |
-| `webroot_get_dnsp_categories` | 列出 DNS Protection 内容过滤分类（需该控制台已启用 DNSP） | 无 |
-| `webroot_get_dnsp_block_reasons` | 列出 DNS Protection 拦截原因代码（需该控制台已启用 DNSP） | 无 |
-| `webroot_get_dnsp_traffic_summary` | 获取 DNS Protection 流量汇总统计（需该控制台已启用 DNSP） | `start_date`、`end_date`（均必填） |
-| `webroot_get_agent_status` | 获取终端 Agent 的实时状态/授权信息 | `batch_size`（可选，默认 50，硬上限 200） |
+| `webroot_get_sites` | List all sites (customer accounts) under this GSM console | None |
+| `webroot_get_endpoints` | List protected endpoint devices under the specified site | `site_id` (required), `page_size` (optional, default 50, hard limit 200) |
+| `webroot_get_groups` | List endpoint groups under the specified site | `site_id` (required) |
+| `webroot_get_policies` | List security policies under this GSM console | None |
+| `webroot_get_threat_history` | Get the threat detection history of the specified site within a date range (the range cannot exceed 3 months) | `site_id`, `start_date`, `end_date` (all required), `page_size` (optional, hard limit 200), `page_nr` (optional) |
+| `webroot_get_dnsp_blocked_traffic` | Get the DNS Protection blocked traffic records of the specified site (requires DNSP to be enabled on the console) | `site_id`, `start_date`, `end_date` (all required), `page_size` (optional, hard limit 200), `page_nr` (optional) |
+| `webroot_get_dnsp_categories` | List DNS Protection content filtering categories (requires DNSP to be enabled on the console) | None |
+| `webroot_get_dnsp_block_reasons` | List DNS Protection block reason codes (requires DNSP to be enabled on the console) | None |
+| `webroot_get_dnsp_traffic_summary` | Get DNS Protection traffic summary statistics (requires DNSP to be enabled on the console) | `start_date`, `end_date` (both required) |
+| `webroot_get_agent_status` | Get the real-time status/license information of endpoint Agents | `batch_size` (optional, default 50, hard limit 200) |
 
 `page_size`/`batch_size` caps: the vendor's public API reference does not
 document a maximum for these parameters on any endpoint above, so this
@@ -190,7 +190,7 @@ and retry `429`/`5xx` responses up to 3 times with backoff (respecting
 `Retry-After`, capped at 20s), reusing a single pooled HTTP client for the
 process lifetime.
 
-## 测试示例
+## Test Example
 
 ```bash
 # Health check
